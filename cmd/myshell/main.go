@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -39,7 +40,7 @@ func IsFile(path string) bool {
 	return !info.IsDir()
 }
 
-func IsInPath(name string) (string, bool) {
+func GetPath(name string) (string, bool) {
 	path := os.Getenv("PATH")
 	for _, p := range strings.Split(path, string(os.PathListSeparator)) {
 		fpath := filepath.Join(p, name)
@@ -75,7 +76,7 @@ func typeBuiltin(args []string) {
 		fmt.Fprintf(os.Stdout, "%s is a shell builtin\n", command)
 		return
 	}
-	if path, ok := IsInPath(command); ok {
+	if path, ok := GetPath(command); ok {
 		fmt.Fprintf(os.Stdout, "%s is %s\n", command, path)
 		return
 	}
@@ -99,12 +100,25 @@ func main() {
 		inputParts := strings.Split(strings.TrimSpace(input), " ")
 		command := inputParts[0]
 
+		// process builtins
 		builtin, ok := builtins[command]
 		if ok {
 			builtin(inputParts[1:])
-		} else {
-			fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
+			continue
 		}
 
+		// process executables
+		fpath, ok := GetPath(command)
+		if ok {
+			cmd := exec.Command(fpath, inputParts[1:]...)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			// TODO: set the return value
+			//if err := cmd.Run(); err != nil {
+			_ = cmd.Run()
+			continue
+		}
+
+		fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
 	}
 }

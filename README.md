@@ -62,3 +62,11 @@ $ type invalid_command
 invalid_command: not found
 $
 ```
+
+## Run a program
+```
+go run cmd/myshell/main.go 
+$ ls
+cmd  codecrafters.yml  go.mod  go.sum  README.md  your_program.sh
+$ 
+```
