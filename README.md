@@ -32,3 +32,11 @@ $ hello
 hello: command not found
 $ exit
 ```
+
+## The echo builtin
+```
+go run cmd/myshell/main.go 
+$ echo hello world
+hello world
+$ exit
+```

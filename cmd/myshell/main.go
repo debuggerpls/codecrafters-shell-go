@@ -9,12 +9,21 @@ import (
 
 var builtins = map[string]func([]string){
 	"exit": exitBuiltin,
+	"echo": echoBuiltin,
 }
 
 func exitBuiltin(args []string) {
 	// TODO: is it ok to just exit here?
 	// TODO: pass exit arg when exiting
 	os.Exit(0)
+}
+
+func echoBuiltin(args []string) {
+	if len(args) == 0 {
+		return
+	}
+
+	fmt.Fprintf(os.Stdout, "%s\n", strings.Join(args, " "))
 }
 
 func main() {
