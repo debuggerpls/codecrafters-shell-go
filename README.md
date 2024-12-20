@@ -50,3 +50,15 @@ $ type echo
 echo is a shell builtin
 $ exit
 ```
+
+## The type builtin: executable files
+```
+PATH="/usr/bin:/usr/local/bin" ./your_program.sh
+$ type ls
+ls is /usr/bin/ls
+$ type abcd
+abcd is /usr/local/bin/abcd
+$ type invalid_command
+invalid_command: not found
+$
+```

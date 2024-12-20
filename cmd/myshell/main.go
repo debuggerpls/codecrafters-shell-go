@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -29,6 +30,27 @@ func IsBuiltin(name string) bool {
 	return false
 }
 
+func IsFile(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	return !info.IsDir()
+}
+
+func IsInPath(name string) (string, bool) {
+	path := os.Getenv("PATH")
+	for _, p := range strings.Split(path, string(os.PathListSeparator)) {
+		fpath := filepath.Join(p, name)
+		if IsFile(fpath) {
+			return fpath, true
+		}
+	}
+
+	return "", false
+}
+
 func exitBuiltin(args []string) {
 	// TODO: is it ok to just exit here?
 	// TODO: pass exit arg when exiting
@@ -51,10 +73,14 @@ func typeBuiltin(args []string) {
 	command := args[0]
 	if IsBuiltin(command) {
 		fmt.Fprintf(os.Stdout, "%s is a shell builtin\n", command)
-
-	} else {
-		fmt.Fprintf(os.Stdout, "%s: not found\n", command)
+		return
 	}
+	if path, ok := IsInPath(command); ok {
+		fmt.Fprintf(os.Stdout, "%s is %s\n", command, path)
+		return
+	}
+
+	fmt.Fprintf(os.Stdout, "%s: not found\n", command)
 }
 
 func main() {
