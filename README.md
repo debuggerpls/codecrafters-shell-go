@@ -90,3 +90,18 @@ $ cd /does_not_exist
 cd: /does_not_exist: No such file or directory
 $
 ```
+
+## The cd builtin: relative paths
+```
+go run cmd/myshell/main.go 
+$ cd /usr
+$ pwd
+/usr
+$ cd ./local/bin
+$ pwd
+/usr/local/bin
+$ cd ../../
+$ pwd
+/usr
+$
+```
