@@ -24,3 +24,11 @@ $ hello
 hello: command not found
 $
 ```
+
+## The exit builtin
+```
+go run cmd/myshell/main.go 
+$ hello
+hello: command not found
+$ exit
+```

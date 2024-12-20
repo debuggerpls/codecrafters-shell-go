@@ -7,6 +7,16 @@ import (
 	"strings"
 )
 
+var builtins = map[string]func([]string){
+	"exit": exitBuiltin,
+}
+
+func exitBuiltin(args []string) {
+	// TODO: is it ok to just exit here?
+	// TODO: pass exit arg when exiting
+	os.Exit(0)
+}
+
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 
@@ -20,8 +30,15 @@ func main() {
 			os.Exit(1)
 		}
 
-		command := strings.TrimSpace(input)
+		inputParts := strings.Split(strings.TrimSpace(input), " ")
+		command := inputParts[0]
 
-		fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
+		builtin, ok := builtins[command]
+		if ok {
+			builtin(inputParts[1:])
+		} else {
+			fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
+		}
+
 	}
 }
