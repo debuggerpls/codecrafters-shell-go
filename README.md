@@ -40,3 +40,13 @@ $ echo hello world
 hello world
 $ exit
 ```
+
+## The type builtin
+```
+go run cmd/myshell/main.go 
+$ type invalid
+invalid: not found
+$ type echo
+echo is a shell builtin
+$ exit
+```
