@@ -15,3 +15,12 @@ $ hello
 hello: command not found
 ```
 
+## REPL
+```
+go run cmd/myshell/main.go
+$ hello
+hello: command not found
+$ hello
+hello: command not found
+$
+```
