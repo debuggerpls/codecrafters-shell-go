@@ -100,11 +100,14 @@ func pwdBuiltin(args []string) {
 }
 
 func cdBuiltin(args []string) {
-	if len(args) == 0 {
-		// TODO: change to HOME_DIR
-		return
+	var dir string
+	if len(args) == 0 || args[0] == "~" {
+		dir = os.Getenv("HOME")
+	} else {
+		dir = args[0]
 	}
-	if err := os.Chdir(args[0]); err != nil {
+
+	if err := os.Chdir(dir); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Fprintf(os.Stderr, "cd: %s: No such file or directory\n", args[0])
 			return

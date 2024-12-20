@@ -105,3 +105,15 @@ $ pwd
 /usr
 $
 ```
+
+## The cd builtin: home directory
+```
+go run cmd/myshell/main.go 
+$ cd /usr/local/bin
+$ pwd
+/usr/local/bin
+$ cd ~
+$ pwd
+/home/user
+$
+```
