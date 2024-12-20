@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,6 +16,7 @@ var builtinsNames = []string{
 	"echo",
 	"type",
 	"pwd",
+	"cd",
 }
 
 var builtins = map[string]func([]string){
@@ -22,6 +24,7 @@ var builtins = map[string]func([]string){
 	builtinsNames[1]: echoBuiltin,
 	builtinsNames[2]: typeBuiltin,
 	builtinsNames[3]: pwdBuiltin,
+	builtinsNames[4]: cdBuiltin,
 }
 
 func IsBuiltin(name string) bool {
@@ -91,8 +94,25 @@ func pwdBuiltin(args []string) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
+		return
 	}
 	fmt.Fprintf(os.Stdout, "%s\n", pwd)
+}
+
+func cdBuiltin(args []string) {
+	if len(args) == 0 {
+		// TODO: change to HOME_DIR
+		return
+	}
+	if err := os.Chdir(args[0]); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			fmt.Fprintf(os.Stderr, "cd: %s: No such file or directory\n", args[0])
+			return
+		} else {
+			// TODO: do not pass the underlying error
+			fmt.Fprintf(os.Stderr, "cd: %s: %s\n", args[0], err)
+		}
+	}
 }
 
 func main() {

@@ -79,3 +79,14 @@ $ pwd
 $ type pwd
 pwd is a shell builtin
 ```
+
+## The cd builtin: absolute paths
+```
+go run cmd/myshell/main.go 
+$ cd /usr/local/bin
+$ pwd
+/usr/local/bin
+$ cd /does_not_exist
+cd: /does_not_exist: No such file or directory
+$
+```
