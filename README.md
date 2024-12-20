@@ -70,3 +70,12 @@ $ ls
 cmd  codecrafters.yml  go.mod  go.sum  README.md  your_program.sh
 $ 
 ```
+
+## The pwd builtin
+```
+go run cmd/myshell/main.go 
+$ pwd
+/home/debuggerpls/code/codecrafters-shell-go
+$ type pwd
+pwd is a shell builtin
+```

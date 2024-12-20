@@ -14,12 +14,14 @@ var builtinsNames = []string{
 	"exit",
 	"echo",
 	"type",
+	"pwd",
 }
 
 var builtins = map[string]func([]string){
 	builtinsNames[0]: exitBuiltin,
 	builtinsNames[1]: echoBuiltin,
 	builtinsNames[2]: typeBuiltin,
+	builtinsNames[3]: pwdBuiltin,
 }
 
 func IsBuiltin(name string) bool {
@@ -82,6 +84,15 @@ func typeBuiltin(args []string) {
 	}
 
 	fmt.Fprintf(os.Stdout, "%s: not found\n", command)
+}
+
+func pwdBuiltin(args []string) {
+	//fmt.Fprintf(os.Stdout, "%s\n", os.Getenv("PWD"))
+	pwd, err := os.Getwd()
+	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+	}
+	fmt.Fprintf(os.Stdout, "%s\n", pwd)
 }
 
 func main() {
