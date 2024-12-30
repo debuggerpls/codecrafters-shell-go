@@ -4,36 +4,57 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-// FIXME: there must be a better solution to overcome initialization loop in typeBuiltin
-var builtinsNames = []string{
-	"exit",
-	"echo",
-	"type",
-	"pwd",
-	"cd",
+const (
+	ExitBuiltin = "exit"
+	EchoBuiltin = "echo"
+	TypeBuiltin = "type"
+	PwdBuiltin  = "pwd"
+	CdBuiltin   = "cd"
+)
+
+var SupportedShellBuiltins = []string{
+	ExitBuiltin,
+	EchoBuiltin,
+	TypeBuiltin,
+	PwdBuiltin,
+	CdBuiltin,
 }
 
-var builtins = map[string]func([]string){
-	builtinsNames[0]: exitBuiltin,
-	builtinsNames[1]: echoBuiltin,
-	builtinsNames[2]: typeBuiltin,
-	builtinsNames[3]: pwdBuiltin,
-	builtinsNames[4]: cdBuiltin,
+var ShellBuiltins = []Command{
+	{
+		Name:        ExitBuiltin,
+		BuiltinFunc: exitBuiltin,
+	},
+	{
+		Name:        EchoBuiltin,
+		BuiltinFunc: echoBuiltin,
+	},
+	{
+		Name:        TypeBuiltin,
+		BuiltinFunc: typeBuiltin,
+	},
+	{
+		Name:        PwdBuiltin,
+		BuiltinFunc: pwdBuiltin,
+	},
+	{
+		Name:        CdBuiltin,
+		BuiltinFunc: cdBuiltin,
+	},
 }
 
-func IsBuiltin(name string) bool {
-	for _, builtin := range builtinsNames {
-		if builtin == name {
-			return true
-		}
-	}
-	return false
+var NoopCommand = Command{
+	BuiltinFunc: func(command *Command) error {
+		// do nothing
+		return nil
+	},
 }
 
 func IsFile(path string) bool {
@@ -57,65 +78,161 @@ func GetPath(name string) (string, bool) {
 	return "", false
 }
 
-func exitBuiltin(args []string) {
-	// TODO: is it ok to just exit here?
+func exitBuiltin(c *Command) error {
 	// TODO: pass exit arg when exiting
 	os.Exit(0)
+	return nil
 }
 
-func echoBuiltin(args []string) {
-	if len(args) == 0 {
-		return
+func echoBuiltin(c *Command) error {
+	if len(c.Args) == 0 {
+		return nil
 	}
 
-	fmt.Fprintf(os.Stdout, "%s\n", strings.Join(args, " "))
+	fmt.Fprintf(c.Stdout, "%s\n", strings.Join(c.Args, " "))
+	return nil
 }
 
-func typeBuiltin(args []string) {
-	if len(args) == 0 {
-		return
+func typeBuiltin(c *Command) error {
+	if len(c.Args) == 0 {
+		return nil
 	}
 
-	command := args[0]
-	if IsBuiltin(command) {
-		fmt.Fprintf(os.Stdout, "%s is a shell builtin\n", command)
-		return
+	command := c.Args[0]
+	for _, builtin := range SupportedShellBuiltins {
+		if command == builtin {
+			fmt.Fprintf(c.Stdout, "%s is a shell builtin\n", command)
+			return nil
+		}
 	}
 	if path, ok := GetPath(command); ok {
-		fmt.Fprintf(os.Stdout, "%s is %s\n", command, path)
-		return
+		fmt.Fprintf(c.Stdout, "%s is %s\n", command, path)
+		return nil
 	}
 
-	fmt.Fprintf(os.Stdout, "%s: not found\n", command)
+	return fmt.Errorf("%s: not found", command)
 }
 
-func pwdBuiltin(args []string) {
+func pwdBuiltin(c *Command) error {
 	//fmt.Fprintf(os.Stdout, "%s\n", os.Getenv("PWD"))
 	pwd, err := os.Getwd()
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
-		return
+		return err
 	}
-	fmt.Fprintf(os.Stdout, "%s\n", pwd)
+	fmt.Fprintf(c.Stdout, "%s\n", pwd)
+	return nil
 }
 
-func cdBuiltin(args []string) {
+func cdBuiltin(c *Command) error {
 	var dir string
-	if len(args) == 0 || args[0] == "~" {
+	if len(c.Args) == 0 || c.Args[0] == "~" {
 		dir = os.Getenv("HOME")
 	} else {
-		dir = args[0]
+		dir = c.Args[0]
 	}
 
 	if err := os.Chdir(dir); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			fmt.Fprintf(os.Stderr, "cd: %s: No such file or directory\n", args[0])
-			return
+			return fmt.Errorf("cd: %s: No such file or directory", dir)
 		} else {
 			// TODO: do not pass the underlying error
-			fmt.Fprintf(os.Stderr, "cd: %s: %s\n", args[0], err)
+			return fmt.Errorf("cd: %s: %s", dir, err)
 		}
 	}
+
+	return nil
+}
+
+type Command struct {
+	Name        string
+	Path        string
+	Args        []string
+	Stdin       io.Reader
+	Stdout      io.Writer
+	Stderr      io.Writer
+	BuiltinFunc func(*Command) error
+}
+
+func ParseInput(in string) (*Command, error) {
+	var command *Command
+
+	parts := strings.Fields(in)
+
+	if len(parts) == 0 {
+		return &NoopCommand, nil
+	}
+
+	commandName := parts[0]
+
+	for _, builtin := range ShellBuiltins {
+		if commandName == builtin.Name {
+			command = &builtin
+			break
+		}
+	}
+
+	if command == nil {
+		commandPath, ok := GetPath(commandName)
+		if ok {
+			command = &Command{
+				Name: commandName,
+				Path: commandPath,
+			}
+		}
+	}
+
+	if command == nil {
+		return nil, fmt.Errorf("%s: command not found", commandName)
+	}
+
+	quoteCount := strings.Count(in, "'")
+	if quoteCount == 0 {
+		command.Args = parts[1:]
+	} else {
+		// FIXME: check for invalid quoteCount, like not even number
+
+		command.Args = make([]string, 0, 1)
+		index := 0
+		for i := 0; i < quoteCount; i++ {
+			newIndex := strings.Index(in[index:], "'")
+			if i == 0 {
+				p := strings.Fields(in[:newIndex])
+				command.Args = append(command.Args, p[1:]...)
+			}
+			if i%2 == 1 {
+				command.Args = append(command.Args, in[index:index+newIndex])
+			}
+			index += newIndex + 1
+		}
+		if index < len(in)-1 {
+			fmt.Printf("Index not at end =%d len=%d\n", index, len(in))
+			command.Args = append(command.Args, in[index:])
+		}
+	}
+
+	command.Stdin = os.Stdin
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+
+	return command, nil
+}
+
+func (c *Command) Run() error {
+	if c.BuiltinFunc != nil {
+		if err := c.BuiltinFunc(c); err != nil {
+			return err
+		}
+
+	} else {
+		cmd := exec.Command(c.Path, c.Args...)
+		cmd.Stdout = c.Stdout
+		cmd.Stderr = c.Stderr
+		// TODO: set the return value
+		//if err := cmd.Run(); err != nil {
+		_ = cmd.Run()
+	}
+
+	return nil
 }
 
 func main() {
@@ -131,28 +248,14 @@ func main() {
 			os.Exit(1)
 		}
 
-		inputParts := strings.Split(strings.TrimSpace(input), " ")
-		command := inputParts[0]
-
-		// process builtins
-		builtin, ok := builtins[command]
-		if ok {
-			builtin(inputParts[1:])
+		command, err := ParseInput(input)
+		if err != nil {
+			fmt.Fprintf(os.Stdout, "%s\n", err)
 			continue
 		}
 
-		// process executables
-		fpath, ok := GetPath(command)
-		if ok {
-			cmd := exec.Command(fpath, inputParts[1:]...)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			// TODO: set the return value
-			//if err := cmd.Run(); err != nil {
-			_ = cmd.Run()
-			continue
+		if err := command.Run(); err != nil {
+			fmt.Fprintf(os.Stdout, "%s\n", err)
 		}
-
-		fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
 	}
 }
