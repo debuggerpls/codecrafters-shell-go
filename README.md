@@ -117,3 +117,23 @@ $ pwd
 /home/user
 $
 ```
+
+## Single quotes
+```
+go run cmd/myshell/main.go 
+$ echo 'shell hello'
+shell hello
+$ echo 'world     test'
+world     test
+$
+```
+
+## Double quotes
+```
+go run cmd/myshell/main.go 
+$ echo "quz  hello"  "bar"
+quz  hello bar
+$ echo "bar"  "shell's"  "foo"
+bar shell's foo
+$
+```

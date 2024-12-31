@@ -185,28 +185,41 @@ func ParseInput(in string) (*Command, error) {
 		return nil, fmt.Errorf("%s: command not found", commandName)
 	}
 
-	quoteCount := strings.Count(in, "'")
+	quoteCount := strings.Count(in, "'") + strings.Count(in, "\"")
 	if quoteCount == 0 {
 		command.Args = parts[1:]
 	} else {
 		// FIXME: check for invalid quoteCount, like not even number
+		// FIXME: cases like CMD'ASDASD' or CMD'ASda ' etc
+		argString := strings.TrimSpace(in[strings.Index(in, " "):])
 
-		command.Args = make([]string, 0, 1)
-		index := 0
-		for i := 0; i < quoteCount; i++ {
-			newIndex := strings.Index(in[index:], "'")
-			if i == 0 {
-				p := strings.Fields(in[:newIndex])
-				command.Args = append(command.Args, p[1:]...)
+		var prevC rune
+		var prevQuote rune
+		inQuotes := false
+		quoteIndex := 0
+		for i, c := range argString {
+			//fmt.Printf("Index=%d, char=%c (%d)\n", i, c, c)
+			switch c {
+			case '\'', '"':
+				if !inQuotes {
+					inQuotes = true
+					prevQuote = c
+					if quoteIndex == 0 {
+						p := strings.Fields(argString[:i])
+						command.Args = append(command.Args, p...)
+					}
+					quoteIndex = i
+				} else if c == prevQuote {
+					inQuotes = false
+					command.Args = append(command.Args, argString[quoteIndex+1:i])
+					quoteIndex = i + 1
+				}
 			}
-			if i%2 == 1 {
-				command.Args = append(command.Args, in[index:index+newIndex])
-			}
-			index += newIndex + 1
+			prevC = c
 		}
-		if index < len(in)-1 {
-			fmt.Printf("Index not at end =%d len=%d\n", index, len(in))
-			command.Args = append(command.Args, in[index:])
+		_ = prevC
+		if quoteIndex+1 < len(argString) {
+			command.Args = append(command.Args, argString[quoteIndex+1:])
 		}
 	}
 
