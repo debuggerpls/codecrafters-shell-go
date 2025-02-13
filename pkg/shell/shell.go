@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -44,6 +45,14 @@ func RunShell(ctx context.Context, stdin io.Reader, stdout io.Writer) int {
 			return 0
 		case "echo":
 			fmt.Fprintln(stdout, strings.Join(args, " "))
+		case "type":
+			argCmd := args[0]
+			builtins := []string{"type", "exit", "echo"}
+			if slices.Contains(builtins, argCmd) {
+				fmt.Fprintf(stdout, "%s is a shell builtin\n", argCmd)
+			} else {
+				fmt.Fprintf(stdout, "%s: not found\n", argCmd)
+			}
 		default:
 			fmt.Fprintf(stdout, "%s: command not found\n", command)
 		}

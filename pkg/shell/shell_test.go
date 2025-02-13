@@ -98,7 +98,7 @@ func TestExit(t *testing.T) {
 	scanner := bufio.NewScanner(&stdout)
 
 	if !scanner.Scan() {
-		t.Fatalf("expected invalid command message")
+		t.Fatalf("expected output, got nothing")
 	}
 	// expect that REPL breaks after exit
 	want := "$ "
@@ -125,5 +125,28 @@ func TestEcho(t *testing.T) {
 	got := scanner.Text()
 	if got != want {
 		t.Errorf("got %q want %q", got, want)
+	}
+}
+
+func TestType(t *testing.T) {
+	stdout := bytes.Buffer{}
+	stdin := bytes.NewBufferString("type echo\ntype invalid\n")
+	ctx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
+	go RunShell(ctx, stdin, &stdout)
+	// give some time to start the goroutine
+	time.Sleep(time.Millisecond)
+
+	scanner := bufio.NewScanner(&stdout)
+	expected := []string{"$ echo is a shell builtin", "$ invalid: not found"}
+	for _, want := range expected {
+		if !scanner.Scan() {
+			t.Fatalf("expected output")
+		}
+		got := scanner.Text()
+		if got != want {
+			t.Fatalf("got %q want %q", got, want)
+		}
+
 	}
 }
