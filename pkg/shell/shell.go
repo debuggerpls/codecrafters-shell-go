@@ -13,6 +13,8 @@ func RunShell(ctx context.Context, stdin io.Reader, stdout io.Writer) {
 	// Wait for user input
 	scanner := bufio.NewScanner(stdin)
 	for scanner.Scan() {
-		fmt.Fprintf(stdout, "%s: command not found", scanner.Text())
+		fmt.Fprintf(stdout, "%s: command not found\n", scanner.Text())
+
+		fmt.Fprint(stdout, "$ ")
 	}
 }
