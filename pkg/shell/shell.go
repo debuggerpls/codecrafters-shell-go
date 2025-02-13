@@ -2,7 +2,6 @@ package shell
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"slices"
@@ -14,7 +13,7 @@ const (
 	prompt = "$ "
 )
 
-func RunShell(ctx context.Context, stdin io.Reader, stdout io.Writer) int {
+func RunShell(getenv func(string) string, stdin io.Reader, stdout io.Writer) int {
 	fmt.Fprint(stdout, prompt)
 
 	// Wait for user input
