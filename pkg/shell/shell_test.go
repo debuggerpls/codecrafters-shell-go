@@ -99,20 +99,44 @@ func TestEcho(t *testing.T) {
 }
 
 func TestType(t *testing.T) {
-	stdout := bytes.Buffer{}
-	stdin := bytes.NewBufferString("type echo\ntype invalid\n")
-	RunShell(emptyEnv, stdin, &stdout)
+	t.Run("empty path", func(t *testing.T) {
+		stdout := bytes.Buffer{}
+		stdin := bytes.NewBufferString("type ls\ntype echo\ntype invalid\n")
+		RunShell(emptyEnv, stdin, &stdout)
 
-	scanner := bufio.NewScanner(&stdout)
-	expected := []string{"$ echo is a shell builtin", "$ invalid: not found"}
-	for _, want := range expected {
-		if !scanner.Scan() {
-			t.Fatalf("expected output")
+		scanner := bufio.NewScanner(&stdout)
+		expected := []string{"$ ls: not found", "$ echo is a shell builtin", "$ invalid: not found"}
+		for _, want := range expected {
+			if !scanner.Scan() {
+				t.Fatalf("expected output")
+			}
+			got := scanner.Text()
+			if got != want {
+				t.Fatalf("got %q want %q", got, want)
+			}
 		}
-		got := scanner.Text()
-		if got != want {
-			t.Fatalf("got %q want %q", got, want)
-		}
+	})
+	t.Run("non-empty path", func(t *testing.T) {
+		stdout := bytes.Buffer{}
+		stdin := bytes.NewBufferString("type ls\ntype echo\ntype invalid\n")
+		env := func(key string) string {
+			m := make(map[string]string)
+			m["PATH"] = "/usr/bin:/usr/local/bin"
 
-	}
+			return m[key]
+		}
+		RunShell(env, stdin, &stdout)
+
+		scanner := bufio.NewScanner(&stdout)
+		expected := []string{"$ ls is /usr/bin/ls", "$ echo is a shell builtin", "$ invalid: not found"}
+		for _, want := range expected {
+			if !scanner.Scan() {
+				t.Fatalf("expected output")
+			}
+			got := scanner.Text()
+			if got != want {
+				t.Fatalf("got %q want %q", got, want)
+			}
+		}
+	})
 }
