@@ -1,17 +1,11 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
+	"context"
+	"github.com/codecrafters-io/shell-starter-go/pkg/shell"
 	"os"
 )
 
-// Ensures gofmt doesn't remove the "fmt" import in stage 1 (feel free to remove this!)
-var _ = fmt.Fprint
-
 func main() {
-	fmt.Fprint(os.Stdout, "$ ")
-
-	// Wait for user input
-	bufio.NewReader(os.Stdin).ReadString('\n')
+	shell.RunShell(context.Background(), os.Stdin, os.Stdout)
 }
