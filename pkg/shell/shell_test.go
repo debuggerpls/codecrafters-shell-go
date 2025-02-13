@@ -84,3 +84,26 @@ func TestREPL(t *testing.T) {
 
 	}
 }
+
+func TestExit(t *testing.T) {
+	stdout := bytes.Buffer{}
+	stdin := bytes.NewBufferString("exit 0\ncommand\n")
+	ctx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
+
+	go RunShell(ctx, stdin, &stdout)
+	// give some time to start the goroutine
+	time.Sleep(time.Millisecond)
+
+	scanner := bufio.NewScanner(&stdout)
+
+	if !scanner.Scan() {
+		t.Fatalf("expected invalid command message")
+	}
+	// expect that REPL breaks after exit
+	want := "$ "
+	got := scanner.Text()
+	if got != want {
+		t.Errorf("got %q want %q", got, want)
+	}
+}

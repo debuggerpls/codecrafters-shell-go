@@ -7,5 +7,6 @@ import (
 )
 
 func main() {
-	shell.RunShell(context.Background(), os.Stdin, os.Stdout)
+	code := shell.RunShell(context.Background(), os.Stdin, os.Stdout)
+	os.Exit(code)
 }
