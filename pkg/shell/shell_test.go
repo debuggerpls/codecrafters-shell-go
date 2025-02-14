@@ -66,19 +66,36 @@ func TestREPL(t *testing.T) {
 }
 
 func TestExit(t *testing.T) {
-	stdout := bytes.Buffer{}
-	stdin := bytes.NewBufferString("exit 0\ncommand\n")
-	RunShell(emptyEnv, stdin, &stdout)
-
-	scanner := bufio.NewScanner(&stdout)
-	if !scanner.Scan() {
-		t.Fatalf("expected output, got nothing")
+	testCases := []struct {
+		name     string
+		stdinStr string
+		exitCode int
+	}{
+		{"exit 0", "exit 0\ncommand\n", 0},
+		{"exit non-zero", "exit 1\ncommand\n", 1},
+		{"exit without arg", "exit\n", 0},
 	}
-	// expect that REPL breaks after exit
-	want := "$ "
-	got := scanner.Text()
-	if got != want {
-		t.Errorf("got %q want %q", got, want)
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			stdout := bytes.Buffer{}
+			stdin := bytes.NewBufferString(testCase.stdinStr)
+			code := RunShell(emptyEnv, stdin, &stdout)
+			if code != testCase.exitCode {
+				t.Fatalf("expected status code %d, got %d", testCase.exitCode, code)
+			}
+
+			scanner := bufio.NewScanner(&stdout)
+			if !scanner.Scan() {
+				t.Fatalf("expected output, got nothing")
+			}
+			// expect that REPL breaks after exit
+			want := prompt
+			got := scanner.Text()
+			if got != want {
+				t.Errorf("got %q want %q", got, want)
+			}
+		})
 	}
 }
 

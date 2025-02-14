@@ -51,6 +51,9 @@ func RunShell(getenv func(string) string, stdin io.Reader, stdout io.Writer) int
 		// 7. optionally wait for command to complete and collect its exit status
 		switch command {
 		case "exit":
+			if len(args) == 0 {
+				return 0
+			}
 			if code, err := strconv.Atoi(args[0]); err == nil {
 				return code
 			}
