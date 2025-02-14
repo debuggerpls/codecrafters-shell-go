@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -72,7 +73,16 @@ func RunShell(getenv func(string) string, stdin io.Reader, stdout io.Writer) int
 				fmt.Fprintf(stdout, "%s: not found\n", argCmd)
 			}
 		default:
-			fmt.Fprintf(stdout, "%s: command not found\n", command)
+			if fPath, err := GetExecutablePath(command, getenv); err == nil {
+				cmd := exec.Command(fPath, args...)
+				cmd.Stdout = stdout
+				cmd.Stdin = stdin
+				if err := cmd.Run(); err != nil {
+					fmt.Fprintf(stdout, "ERROR: command run error: %s", err)
+				}
+			} else {
+				fmt.Fprintf(stdout, "%s: command not found\n", command)
+			}
 		}
 
 		fmt.Fprint(stdout, prompt)
