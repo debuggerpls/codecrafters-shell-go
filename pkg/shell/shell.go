@@ -4,9 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -16,18 +14,12 @@ const (
 	prompt = "$ "
 )
 
-func GetExecutablePath(name string, getenv func(string) string) (string, error) {
-	paths := strings.Split(getenv("PATH"), ":")
-	for _, p := range paths {
-		fPath := filepath.Join(p, name)
-		if _, err := os.Stat(fPath); err == nil {
-			return fPath, nil
-		}
-	}
-	return "", os.ErrNotExist
+func isExec(name string) bool {
+	_, err := exec.LookPath(name)
+	return err == nil
 }
 
-func RunShell(getenv func(string) string, stdin io.Reader, stdout io.Writer) int {
+func RunShell(stdin io.Reader, stdout io.Writer) int {
 	fmt.Fprint(stdout, prompt)
 
 	// Wait for user input
@@ -67,14 +59,14 @@ func RunShell(getenv func(string) string, stdin io.Reader, stdout io.Writer) int
 
 			if slices.Contains(builtins, argCmd) {
 				fmt.Fprintf(stdout, "%s is a shell builtin\n", argCmd)
-			} else if fPath, err := GetExecutablePath(argCmd, getenv); err == nil {
+			} else if fPath, err := exec.LookPath(argCmd); err == nil {
 				fmt.Fprintf(stdout, "%s is %s\n", argCmd, fPath)
 			} else {
 				fmt.Fprintf(stdout, "%s: not found\n", argCmd)
 			}
 		default:
-			if fPath, err := GetExecutablePath(command, getenv); err == nil {
-				cmd := exec.Command(fPath, args...)
+			if isExec(command) {
+				cmd := exec.Command(command, args...)
 				cmd.Stdout = stdout
 				cmd.Stdin = stdin
 				if err := cmd.Run(); err != nil {

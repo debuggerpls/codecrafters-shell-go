@@ -14,7 +14,7 @@ func emptyEnv(key string) string {
 func TestPrompt(t *testing.T) {
 	stdout := bytes.Buffer{}
 	stdin := bytes.Buffer{}
-	RunShell(emptyEnv, &stdin, &stdout)
+	RunShell(&stdin, &stdout)
 
 	scanner := bufio.NewScanner(&stdout)
 	if !scanner.Scan() {
@@ -32,7 +32,7 @@ func TestPrompt(t *testing.T) {
 func TestInvalidCommands(t *testing.T) {
 	stdout := bytes.Buffer{}
 	stdin := bytes.NewBufferString("invalid_command\n")
-	RunShell(emptyEnv, stdin, &stdout)
+	RunShell(stdin, &stdout)
 
 	scanner := bufio.NewScanner(&stdout)
 	if !scanner.Scan() {
@@ -48,7 +48,7 @@ func TestInvalidCommands(t *testing.T) {
 func TestREPL(t *testing.T) {
 	stdout := bytes.Buffer{}
 	stdin := bytes.NewBufferString("invalid_command\ninvalid2\ninvalid3\n")
-	RunShell(emptyEnv, stdin, &stdout)
+	RunShell(stdin, &stdout)
 
 	scanner := bufio.NewScanner(&stdout)
 	cmds := []string{"invalid_command", "invalid2", "invalid3"}
@@ -80,7 +80,7 @@ func TestExit(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			stdout := bytes.Buffer{}
 			stdin := bytes.NewBufferString(testCase.stdinStr)
-			code := RunShell(emptyEnv, stdin, &stdout)
+			code := RunShell(stdin, &stdout)
 			if code != testCase.exitCode {
 				t.Fatalf("expected status code %d, got %d", testCase.exitCode, code)
 			}
@@ -102,7 +102,7 @@ func TestExit(t *testing.T) {
 func TestEcho(t *testing.T) {
 	stdout := bytes.Buffer{}
 	stdin := bytes.NewBufferString("echo hello world\n")
-	RunShell(emptyEnv, stdin, &stdout)
+	RunShell(stdin, &stdout)
 
 	scanner := bufio.NewScanner(&stdout)
 	if !scanner.Scan() {
@@ -116,44 +116,19 @@ func TestEcho(t *testing.T) {
 }
 
 func TestType(t *testing.T) {
-	t.Run("empty path", func(t *testing.T) {
-		stdout := bytes.Buffer{}
-		stdin := bytes.NewBufferString("type ls\ntype echo\ntype invalid\n")
-		RunShell(emptyEnv, stdin, &stdout)
+	stdout := bytes.Buffer{}
+	stdin := bytes.NewBufferString("type ls\ntype echo\ntype invalid\n")
+	RunShell(stdin, &stdout)
 
-		scanner := bufio.NewScanner(&stdout)
-		expected := []string{"$ ls: not found", "$ echo is a shell builtin", "$ invalid: not found"}
-		for _, want := range expected {
-			if !scanner.Scan() {
-				t.Fatalf("expected output")
-			}
-			got := scanner.Text()
-			if got != want {
-				t.Fatalf("got %q want %q", got, want)
-			}
+	scanner := bufio.NewScanner(&stdout)
+	expected := []string{"$ ls is /usr/bin/ls", "$ echo is a shell builtin", "$ invalid: not found"}
+	for _, want := range expected {
+		if !scanner.Scan() {
+			t.Fatalf("expected output")
 		}
-	})
-	t.Run("non-empty path", func(t *testing.T) {
-		stdout := bytes.Buffer{}
-		stdin := bytes.NewBufferString("type ls\ntype echo\ntype invalid\n")
-		env := func(key string) string {
-			m := make(map[string]string)
-			m["PATH"] = "/usr/bin:/usr/local/bin"
-
-			return m[key]
+		got := scanner.Text()
+		if got != want {
+			t.Fatalf("got %q want %q", got, want)
 		}
-		RunShell(env, stdin, &stdout)
-
-		scanner := bufio.NewScanner(&stdout)
-		expected := []string{"$ ls is /usr/bin/ls", "$ echo is a shell builtin", "$ invalid: not found"}
-		for _, want := range expected {
-			if !scanner.Scan() {
-				t.Fatalf("expected output")
-			}
-			got := scanner.Text()
-			if got != want {
-				t.Fatalf("got %q want %q", got, want)
-			}
-		}
-	})
+	}
 }

@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	code := shell.RunShell(os.Getenv, os.Stdin, os.Stdout)
+	code := shell.RunShell(os.Stdin, os.Stdout)
 	os.Exit(code)
 }
