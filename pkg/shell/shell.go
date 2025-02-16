@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"slices"
 	"strconv"
@@ -53,9 +54,17 @@ func RunShell(stdin io.Reader, stdout io.Writer) int {
 			return 0
 		case "echo":
 			fmt.Fprintln(stdout, strings.Join(args, " "))
+		case "pwd":
+			pwd, err := os.Getwd()
+			if err != nil {
+				// TODO: get stderr ?!
+				fmt.Fprintf(stdout, "ERROR: calling Getwd: %s", err)
+				return 1
+			}
+			fmt.Fprintf(stdout, "%s\n", pwd)
 		case "type":
 			argCmd := args[0]
-			builtins := []string{"type", "exit", "echo"}
+			builtins := []string{"type", "exit", "echo", "pwd"}
 
 			if slices.Contains(builtins, argCmd) {
 				fmt.Fprintf(stdout, "%s is a shell builtin\n", argCmd)
@@ -80,5 +89,5 @@ func RunShell(stdin io.Reader, stdout io.Writer) int {
 		fmt.Fprint(stdout, prompt)
 	}
 
-	return 1
+	return 0
 }

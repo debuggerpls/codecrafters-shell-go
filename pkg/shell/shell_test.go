@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -131,4 +133,39 @@ func TestType(t *testing.T) {
 			t.Fatalf("got %q want %q", got, want)
 		}
 	}
+}
+
+func TestPwd(t *testing.T) {
+	t.Run("pwd output", func(t *testing.T) {
+		out := bytes.Buffer{}
+		in := bytes.NewBufferString("pwd\n")
+		exitCode := RunShell(in, &out)
+		if exitCode != 0 {
+			t.Fatalf("Expected 0 status code")
+		}
+		got := strings.Trim(out.String(), prompt)
+
+		cmd := exec.Command("pwd")
+		wanted := bytes.Buffer{}
+		cmd.Stdout = &wanted
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("os command pwd failed with: %s", err)
+		}
+
+		if got != wanted.String() {
+			t.Fatalf("got %q wanted %q", got, wanted.String())
+		}
+	})
+	t.Run("pwd as builtin", func(t *testing.T) {
+		out := bytes.Buffer{}
+		in := bytes.NewBufferString("type pwd\n")
+		RunShell(in, &out)
+		got := strings.Trim(out.String(), prompt)
+		wanted := "pwd is a shell builtin\n"
+
+		if got != wanted {
+			t.Fatalf("got %q wanted %q", got, wanted)
+		}
+	})
+
 }
