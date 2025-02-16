@@ -58,13 +58,20 @@ func RunShell(stdin io.Reader, stdout io.Writer) int {
 			pwd, err := os.Getwd()
 			if err != nil {
 				// TODO: get stderr ?!
-				fmt.Fprintf(stdout, "ERROR: calling Getwd: %s", err)
+				fmt.Fprintf(stdout, "ERROR: %s\n", err)
 				return 1
 			}
 			fmt.Fprintf(stdout, "%s\n", pwd)
+		case "cd":
+			// TODO: if no args, then chage to home
+			err := os.Chdir(args[0])
+			if err != nil {
+				// TODO: stderr, can it be different than no such file or directory?
+				fmt.Fprintf(stdout, "cd: %s: No such file or directory\n", args[0])
+			}
 		case "type":
 			argCmd := args[0]
-			builtins := []string{"type", "exit", "echo", "pwd"}
+			builtins := []string{"type", "exit", "echo", "pwd", "cd"}
 
 			if slices.Contains(builtins, argCmd) {
 				fmt.Fprintf(stdout, "%s is a shell builtin\n", argCmd)

@@ -167,5 +167,29 @@ func TestPwd(t *testing.T) {
 			t.Fatalf("got %q wanted %q", got, wanted)
 		}
 	})
+}
 
+func TestCd(t *testing.T) {
+	t.Run("cd into existing dir", func(t *testing.T) {
+		out := bytes.Buffer{}
+		in := bytes.NewBufferString("cd /home\n")
+		RunShell(in, &out)
+		got := strings.Trim(out.String(), prompt)
+
+		wanted := ""
+		if got != wanted {
+			t.Fatalf("got %q wanted %q", got, wanted)
+		}
+	})
+	t.Run("cd into non-existing", func(t *testing.T) {
+		out := bytes.Buffer{}
+		in := bytes.NewBufferString("cd /nnnonexistend\n")
+		RunShell(in, &out)
+		got := strings.Trim(out.String(), prompt)
+		wanted := "cd: /nnnonexistend: No such file or directory\n"
+
+		if got != wanted {
+			t.Fatalf("got %q wanted %q", got, wanted)
+		}
+	})
 }
