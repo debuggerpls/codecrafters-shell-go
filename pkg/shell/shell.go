@@ -63,8 +63,12 @@ func RunShell(stdin io.Reader, stdout io.Writer) int {
 			}
 			fmt.Fprintf(stdout, "%s\n", pwd)
 		case "cd":
-			// TODO: if no args, then chage to home
-			err := os.Chdir(args[0])
+			// TODO: if no args, then change to home
+			dest := os.Getenv("HOME")
+			if len(args) != 0 && args[0] != "~" {
+				dest = args[0]
+			}
+			err := os.Chdir(dest)
 			if err != nil {
 				// TODO: stderr, can it be different than no such file or directory?
 				fmt.Fprintf(stdout, "cd: %s: No such file or directory\n", args[0])

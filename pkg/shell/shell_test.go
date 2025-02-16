@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -187,6 +188,17 @@ func TestCd(t *testing.T) {
 		RunShell(in, &out)
 		got := strings.Trim(out.String(), prompt)
 		wanted := "cd: /nnnonexistend: No such file or directory\n"
+
+		if got != wanted {
+			t.Fatalf("got %q wanted %q", got, wanted)
+		}
+	})
+	t.Run("cd to tilde", func(t *testing.T) {
+		out := bytes.Buffer{}
+		in := bytes.NewBufferString("cd ~\npwd\n")
+		RunShell(in, &out)
+		got := strings.Trim(out.String(), prompt)
+		wanted := os.Getenv("HOME") + "\n"
 
 		if got != wanted {
 			t.Fatalf("got %q wanted %q", got, wanted)
