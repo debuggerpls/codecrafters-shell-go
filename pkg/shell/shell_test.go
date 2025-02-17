@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -204,4 +205,26 @@ func TestCd(t *testing.T) {
 			t.Fatalf("got %q wanted %q", got, wanted)
 		}
 	})
+}
+func TestSingleQuotes(t *testing.T) {
+	testCases := []struct {
+		name   string
+		input  string
+		tokens []string
+	}{
+		{"no quotes", "echo shell hello", []string{"echo", "shell", "hello"}},
+		{"no quotes multiple spaces", "echo shell  hello", []string{"echo", "shell", "hello"}},
+		{"simple quotes", "echo 'shell hello'", []string{"echo", "shell hello"}},
+		{"with multiple spaces", "echo 'shell   hello'", []string{"echo", "shell   hello"}},
+		{"with multiple spaces and no spaces", "echo 'shell   hello' 'shell''hello'", []string{"echo", "shell   hello", "shellhello"}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			got := Tokenize(testCase.input)
+			if !slices.Equal(got, testCase.tokens) {
+				t.Errorf("got %q want %q input %q", got, testCase.tokens, testCase.input)
+			}
+		})
+	}
 }

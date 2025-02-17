@@ -31,7 +31,7 @@ func RunShell(stdin io.Reader, stdout io.Writer) int {
 		input := scanner.Text()
 
 		// 2. break input into words and operators (tokenize), obey quoting rules
-		tokens := strings.Split(input, " ")
+		tokens := Tokenize(input)
 
 		// 3. parse tokens into simple and compound commands
 		command := tokens[0]
@@ -101,4 +101,58 @@ func RunShell(stdin io.Reader, stdout io.Writer) int {
 	}
 
 	return 0
+}
+
+func Tokenize(input string) []string {
+	var tokens []string
+
+	quoted := false
+	builder := strings.Builder{}
+	const (
+		singleQuote = '\''
+	)
+	lastChar := int32(-1)
+	for _, char := range input {
+		if char == singleQuote {
+			quoted = !quoted
+			lastChar = char
+			continue
+		}
+		if !quoted && lastChar == singleQuote && builder.Len() > 0 {
+			// a) out of single quotes
+			// b) out of single quotes but NOT next to new single quotes
+			tokens = append(tokens, builder.String())
+			builder.Reset()
+		}
+
+		if char == ' ' {
+			if lastChar != char {
+				// first space
+				if quoted {
+					builder.WriteRune(char)
+				} else {
+					if builder.Len() > 0 {
+						tokens = append(tokens, builder.String())
+						builder.Reset()
+					}
+				}
+				lastChar = char
+			} else {
+				if quoted {
+					builder.WriteRune(char)
+				}
+			}
+			continue
+		}
+
+		builder.WriteRune(char)
+		lastChar = char
+	}
+
+	if builder.Len() > 0 {
+		// buffer contains last word
+		tokens = append(tokens, builder.String())
+	}
+
+	return tokens
 }
